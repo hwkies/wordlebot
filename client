@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from random import randint
 import os
 import sys
@@ -6,44 +8,55 @@ import json
 import ssl
 
 #NEED TO DO
-#1. rewrite yellow letter handling
-#2. figure out how to run it with ./client
-#3. fill in README.md
-#4. fill in empty makefile so grandescope grader compiles
-#5. OPTIONAL: write more comprehensive wordle bot
+#1. figure out how to run it with ./client
+#2. fill in README.md
+#3. fill in empty makefile so grandescope grader compiles
+#4. OPTIONAL: write more comprehensive wordle bot
 
 #create an accessible array of lines from the wordlist
 wordlist = open(os.path.join(sys.path[0], "wordlist.txt"))
 words = wordlist.readlines()
-yellow = []
 
-# def yellowLetters(word):
-#     for letter in yellow:
-#         for i in range(5):
-#             if word[i] == letter:
-#                 return True
-#             else:
-#                 return False    
+#return true if a given word contains a yellow letter, false otherwise
+def yellowLetters(word, marks, guessedWord):
+    #create empty list for yellow letters
+    yellow = []
+    #generate list of yellow letters from guessed word
+    for j in range(5):
+        if marks[j] == 1:
+            yellow.append(guessedWord[j])
+    #iterate through list of yellow letters and see if the given
+    #word contains any of the yellow letters         
+    for letter in yellow:
+        for i in range(5):
+            if word[i] == letter:
+                return True
+        return False    
 
+#shrink the wordlist according to a set of numerical marks and a guessed word
 def shrinkWordlist(marks, guessedWord):
-    # for j in range(5):
-    #     if marks[j] == 1:
-    #         yellow.append(guessedWord[j])
     newWords = []
     for word in words:
         for i in range(5):
+            #letter in guess is black and in the same spot in dictionary word
             if guessedWord[i] == word[i] and marks[i] == 0:
                 newWords.append(word)
                 break
+            #letter in guess is green and not in same spot in dictionary word
             elif guessedWord[i] != word[i] and marks[i] == 2:
                 newWords.append(word) 
                 break
-            # elif yellowLetters(word) == False:
-            #     newWords.append(word)   
-            #     break           
+            #letter in guess is yellow and in same spot in dictionary word
+            elif guessedWord[i] == word[i] and marks[i] == 1:
+                newWords.append(word)
+                break
+            #dictionary word does not contain a yellow letter
+            elif yellowLetters(word, marks, guessedWord ) == False:
+                newWords.append(word)   
+                break  
+    #remove all words that need to be removed from wordlist                 
     for line in newWords:
         words.remove(line)                   
-            
 
 #get a random word in the available words
 def getRandWord():
@@ -56,17 +69,20 @@ def getRandWord():
 
     return randWord[:5]
 
+#create a TCP client and send to receive data
 def communicateTCP(hostname, user):
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #connect to the server with the specified hostname and port
     dataHandler(client, hostname, user)
 
+#create a TLS encrypted client to send and receive data
 def communicateTLS(hostname, user):
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     context = ssl.create_default_context()
     encryptclient = context.wrap_socket(client, server_hostname=hostname)
     dataHandler(encryptclient, hostname, user)
 
+#create a client server connection and send a hello message to server
 def dataHandler(client, hostname, user):
     client.connect((hostname, port))
     #send data to the server including user
@@ -79,12 +95,21 @@ def dataHandler(client, hostname, user):
     stringResp = json.loads(response)
     print(responseHandler(stringResp, client))
 
+#send a responding guess to the server and return the server response
+def sendResponse(client):
+    guess = json.dumps({'type': 'guess', 'id': id, 'word': getRandWord()}) + '\n'
+    print(guess)
+    client.send(guess.encode())
+    return json.loads(client.recv(25600).decode())
+
+#handle server responses and return the final flag
 def responseHandler(response, client):
     stringResp = response
     #if start message, get id and make a guess
     if stringResp["type"] == "start":
         id = stringResp["id"]
         guess = json.dumps({'type': 'guess', 'id': id, 'word': getRandWord()}) + '\n'
+        print(guess)
         client.send(guess.encode())
         stringResp = json.loads(client.recv(25600).decode())
     #while guess is incorrect, make new guess    
@@ -93,6 +118,7 @@ def responseHandler(response, client):
         lastGuess = stringResp["guesses"][len(stringResp["guesses"]) - 1]
         shrinkWordlist(lastGuess["marks"], lastGuess["word"])
         guess = json.dumps({'type': 'guess', 'id': id, 'word': getRandWord()}) + '\n'
+        print(guess)
         client.send(guess.encode())
         stringResp = json.loads(client.recv(25600).decode())
     #print the final flag
@@ -114,7 +140,7 @@ elif numArgs == 4 and args[0] == "-p":
     communicateTCP(args[2], args[3])
 else:
     port = 27993
-    communicateTCP(args[0], args[1])   
+    communicateTCP(args[0], args[1])
 
 
 #take in an array of integers representing green, yellow, or black letters
