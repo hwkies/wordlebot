@@ -23,3 +23,5 @@ The shrinkWordlist method takes in the marks of a guessed word and the guessed w
 through my list of possible words and checks each letter in each word. It compares the marks and guessed word 
 with each word in my wordlist and if a word should be removed, it is added to an array newWords. This method 
 then removes all words in newWords from my wordlist, shrinking my wordlist to be only possible answers.
+
+I tested rigorously all methods against the server. I started by testing to see if I got server response after creating my clients. I then created my guessing algorithm and tested to see that it properly shrunk the wordlist. 
