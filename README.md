@@ -22,6 +22,8 @@ return the flag found in what must be the "bye" server message.
 The shrinkWordlist method takes in the marks of a guessed word and the guessed word itself. It then loops 
 through my list of possible words and checks each letter in each word. It compares the marks and guessed word 
 with each word in my wordlist and if a word should be removed, it is added to an array newWords. This method 
-then removes all words in newWords from my wordlist, shrinking my wordlist to be only possible answers.
+then removes all words in newWords from my wordlist, shrinking my wordlist to be only possible answers. The reason for the creation of a new array of words to be removed is to ensure there are no indexing issues when looping through my wordlist to shrink it.
+
+The strategy used to shrink the wordlist is as follows. If a letter is in the same spot in the wordlist word and my guessed word and the letter is marked 0, remove the word from the wordlist. If a letter in my guessed word is marked 2 and the same spot in the wordlist word is not that letter, remove the word. If a letter is in the same spot in the wordlist word and my guessed word and is marked 1, remove that word. If a yellow letter is not present at all in the wordlist word, remove the word.
 
 I tested rigorously all methods against the server. I started by testing to see if I got server response after creating my clients. I then created my guessing algorithm and tested to see that it properly shrunk the wordlist. 
